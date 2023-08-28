@@ -1,0 +1,72 @@
+#%RAML 1.0
+title: employee1
+baseUri: http://localhost:8081/api
+mediaType: 
+- application/json
+protocols:
+  - HTTP
+version: e1
+
+/getEmployeeById:
+  get:
+    queryParameters:
+      employeeId:
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "id":1,
+                "name":"prakash",
+                "email":"prakash6125@gmail.com",
+                "phone":9515748485
+              }
+/createEmployee:
+  post:
+    body:
+      application/json:
+        example:
+          {
+             "id":1,
+              "name":"prakash",
+              "email":"prakash6125@gmail.com",
+              "phone":9515748485
+          }
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "message":"employee created succesfully"
+              }
+/updateEmployee:
+  put:
+    body:
+      application/json:
+        example:
+          {
+            "id":1,
+            "phone":4578963212
+          }
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "message":"employee updated successfully"
+              }
+/deleteEmployee:
+  delete:
+    queryParameters:
+      employeeId:
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+                "message":"employee deleted successfully"
+              }

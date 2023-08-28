@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<error-handler name="global-Exception-handlingError_Handler" doc:id="035277e8-3b99-48a7-8d4a-4da79861e273" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fb53b93e-46de-4b97-9412-fe5d07ceea14" type="DB:BAD_SQL_SYNTAX" >
+			<set-variable value="503" doc:name="http status" doc:id="49949758-47a7-4745-b864-63c5c91ca5a4" variableName="httpstatus" />
+			<set-variable value='#["syntax error occured"]' doc:name="httpReason" doc:id="af2ab39a-7094-4619-b06b-38a9635efe0e" variableName="httpReason" />
+			<ee:transform doc:name="Transform Message" doc:id="8de6421f-c518-41f7-809d-a7604d8a062b" >
+				<ee:message >
+					<ee:set-payload ><![CDATA["due to bad syntax issue you are not able to get the response "]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate1" doc:id="3af5c0ee-aad1-46b1-af97-2e62ef4258c7" type="DB:CONNECTIVITY" >
+			<set-variable value="500" doc:name="Set Variable" doc:id="0a99709e-8d69-4823-9760-03611a484b3b" variableName="httpstatus" />
+			<set-variable value='#["DataBase connectivity issue"]' doc:name="Set Variable1" doc:id="2b6a7822-32f0-4f8c-b46f-ab0cd0714a28" variableName="httpReason" />
+			<ee:transform doc:name="Transform Message" doc:id="5f4acd88-1190-46bb-b785-7b37abc0baac" >
+				<ee:message >
+					<ee:set-payload ><![CDATA["due to some technical issues you are not able to get the response "]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate2" doc:id="5389e1c2-5cf5-4dc1-a9a4-140fe6c62226" type="DB:QUERY_EXECUTION" >
+			<set-variable value="503" doc:name="Set Variable" doc:id="6dda7765-e560-493d-aee9-1bf60df0f2f5" variableName="httpstatus" />
+			<set-variable value='#["DataBase query issue"]' doc:name="Set Variable1" doc:id="dead295a-39d3-4e02-aea7-9024b6f9c5ee" variableName="httpReason" />
+			<ee:transform doc:name="Transform Message" doc:id="f7af1af8-f6e5-4129-8e95-908fb1708aa7" >
+				<ee:message >
+					<ee:set-payload ><![CDATA["due to some technical issues you are not able to get the response "]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+	</error-handler>
+</mule>

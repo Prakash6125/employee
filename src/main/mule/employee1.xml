@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+    <http:listener-config name="employee1-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="employee1-config" api="employee1.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <configuration-properties doc:name="Configuration properties" doc:id="b780af73-c8db-4cb6-899c-4e0b3307a1cd" file="qa.properties" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="042edbc1-0560-4a41-8128-670452a5fc2b" file="qa-secure.properties" key="123456789" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="7b04f8d9-7f1c-448e-8946-90dc013a3c1b" >
+		<db:my-sql-connection host="${db.host}" port="${db.port}" user="${secure::db.user}" password="${secure::db.password}" database="${db.database}" />
+	</db:config>
+<!-- 	<api-gateway:autodiscovery apiId="18793859" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="bc8c5231-ae40-431e-8308-1071aa91ba6f" flowRef="employee1-main" /> -->
+	<configuration doc:name="Configuration" doc:id="dce7eaf2-110c-4b0e-a27f-3e7adbfed619" defaultErrorHandler-ref="global-Exception-handlingError_Handler" />
+	<flow name="employee1-main">
+        <http:listener config-ref="employee1-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]" reasonPhrase="#[vars.httpReason]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="employee1-config" />
+    </flow>
+    <flow name="put:\updateEmployee:application\json:employee1-config">
+        <db:update doc:name="Update" doc:id="51eacea7-5b1f-423f-ac0f-bfb26dec89ba" config-ref="Database_Config">
+			<db:sql ><![CDATA[update jaggu_db.employee set phone=:phone where id=:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id:payload.id,
+	phone:payload.phone
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "employee updated successfully"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="delete:\deleteEmployee:employee1-config">
+        <db:delete doc:name="Delete" doc:id="7fc0bee1-305e-41a6-912d-04d981c3aac8" config-ref="Database_Config">
+			<db:sql ><![CDATA[delete from jaggu_db.employee where id=:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id:attributes.queryParams.employeeId
+}]]]></db:input-parameters>
+		</db:delete>
+		<ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "employee deleted successfully"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\getEmployeeById:employee1-config">
+        <set-variable value="#[attributes.queryParams.employeeId]" doc:name="Set Variable" doc:id="a22b9c2b-f606-4792-bbd3-ac5b50eafe08" variableName="id"/>
+		<db:select doc:name="Select" doc:id="819ebdff-8ed0-453e-8b77-0dc12e336dc3" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from jaggu_db.employee where id=:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id:vars.id
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+	<flow name="post:\createEmployee:application\json:employee1-config">
+		<db:insert doc:name="Insert" doc:id="3a5379f2-61f3-4e4b-b9fe-a27da07fccea" config-ref="Database_Config">
+			<db:sql><![CDATA[insert into jaggu_db.employee(id,name,email,phone) values(:id,:name,:email,:phone)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	id:payload.id,
+	name:payload.name,
+	email:payload.email,
+	phone:payload.phone
+}]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="793aa691-6395-4749-911e-b37965351476">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"employee created succesfully"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>
